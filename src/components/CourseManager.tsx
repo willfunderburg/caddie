@@ -1,6 +1,11 @@
 import { useState } from "react";
 import type { Course, Hole } from "../types";
 import { searchCourses, importFeaturesNear, type CourseSearchResult } from "../data/osm";
+import {
+  courseFileContents,
+  courseFileName,
+  parseCourseFile,
+} from "../data/courseFile";
 
 interface Props {
   courses: Course[];
@@ -85,6 +90,39 @@ export default function CourseManager({
     setResults(null);
     setQuery("");
     setStatus(`Created "${nc.name}". Open Play to trace the hole on satellite.`);
+  }
+
+  function exportCourse() {
+    if (!course) return;
+    const blob = new Blob([courseFileContents(course)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = courseFileName(course);
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    setStatus(`Exported "${course.name}" — keep the file as your backup.`);
+  }
+
+  function importCourseFile(file: File) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const imported = parseCourseFile(String(reader.result));
+        onChange([...courses, imported]);
+        onSelect(imported.id, imported.holes[0].id);
+        setStatus(
+          `Imported "${imported.name}" (${imported.holes.length} holes).`
+        );
+      } catch (e) {
+        setStatus("Import failed: " + (e as Error).message);
+      }
+    };
+    reader.readAsText(file);
   }
 
   async function importOsm() {
@@ -269,6 +307,30 @@ export default function CourseManager({
           >
             {importing ? "Importing…" : "⤓ Import hazards near this hole (OpenStreetMap)"}
           </button>
+
+          <h2 className="mt">Backup &amp; share</h2>
+          <p className="hint">
+            Your traced holes live only on this device. Export a file to back
+            them up or share with a friend; import to restore.
+          </p>
+          <div className="row">
+            <button className="btn secondary" onClick={exportCourse}>
+              ⇪ Export course
+            </button>
+            <label className="btn secondary" style={{ cursor: "pointer" }}>
+              ⇩ Import course file
+              <input
+                type="file"
+                accept=".json,application/json"
+                style={{ display: "none" }}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) importCourseFile(f);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+          </div>
         </>
       )}
     </div>

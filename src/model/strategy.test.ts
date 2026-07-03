@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 import { computeStrategy } from "./strategy";
 import { expectedStrokes } from "./strokes";
 import type { BallPosition, Hole, LatLng, PlayerProfile } from "../types";
-import { makeProjection, toLatLng, yardsToMeters } from "./geo";
+import {
+  distanceYards,
+  makeProjection,
+  toLatLng,
+  yardsToMeters,
+} from "./geo";
 
 // Build a hole running due north from an origin, so we can place features at
 // known (east, north) yard offsets.
@@ -157,6 +162,34 @@ describe("computeStrategy", () => {
     // side); it should hold the line or favor the open right side.
     expect(res!.safe.offLineDeg).toBeGreaterThan(-3);
     expect(res!.safe.penaltyChance).toBeLessThan(0.1);
+  });
+
+  it("never plants the aim point on a bunker when clean targets score similarly", () => {
+    // Wide fairway with a pot bunker dead-center at driver distance. The
+    // statistically ideal center-of-pattern sits on the sand; the engine
+    // should shade the aim to clean grass beside it.
+    const bunkerCenter = at(0, 230);
+    const hole: Hole = {
+      id: "h",
+      number: 1,
+      par: 5,
+      pin: at(0, 380),
+      features: [
+        {
+          id: "f",
+          kind: "fairway",
+          polygon: [at(-40, 40), at(40, 40), at(40, 300), at(-40, 300)],
+        },
+        { id: "g", kind: "green", polygon: blob(0, 380, 13) },
+        { id: "b", kind: "bunker", polygon: blob(0, 230, 12) },
+      ],
+    };
+    const res = computeStrategy(ball, hole, profile, { riskAppetite: 0.5 });
+    expect(res).not.toBeNull();
+    for (const rec of [res!.chosen, res!.safe]) {
+      const dToBunker = distanceYards(rec.aim, bunkerCenter);
+      expect(dToBunker).toBeGreaterThan(12);
+    }
   });
 
   it("is deterministic for the same inputs", () => {

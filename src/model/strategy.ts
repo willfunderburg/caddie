@@ -102,6 +102,18 @@ const GUARD_WATER_PENALTY = 0.22;
 const GUARD_BUNKER_PENALTY = 0.1;
 const FULL_CLUB_BONUS = 0.02;
 
+// Never tell the player to aim AT trouble. The Monte-Carlo often finds that
+// centering the pattern on a small hazard is statistically near-optimal, but
+// a target you'd hate to hit is bad advice (and bad psychology): shade the aim
+// point's own lie so ties break toward fairway/green targets.
+const AIM_LIE_PENALTY: Partial<Record<Lie, number>> = {
+  bunker: 0.12,
+  trees: 0.15,
+  water: 0.3,
+  oob: 0.3,
+  rough: 0.05,
+};
+
 // Trees crossing the CURRENT shot's line while the ball is still climbing
 // (the first ~35% of the flight) make the shot unplayable as aimed. Trees
 // crossed mid-flight can be carried — that's just cutting the corner.
@@ -303,6 +315,24 @@ function evaluateAim(
   // shot can't actually be played as aimed.
   if (flightBlocked(ctx.ball, aimXY, ctx)) expected += FLIGHT_BLOCK_PENALTY;
 
+  // Don't aim at spots you'd hate to hit (sand, trees, water) when a clean
+  // target scores comparably.
+  expected += AIM_LIE_PENALTY[lieAt(aimXY, ctx)] ?? 0;
+
+  // 1-sigma landing ellipse (centered on the mean landing point, which sits
+  // slightly short of the aim for most players).
+  const zone: XY[] = [];
+  const center: XY = {
+    x: ctx.ball.x + ux * meanDistM,
+    y: ctx.ball.y + uy * meanDistM,
+  };
+  for (let k = 0; k < 24; k++) {
+    const th = (k / 24) * Math.PI * 2;
+    const a = Math.cos(th) * depthM;
+    const o = Math.sin(th) * offM;
+    zone.push({ x: center.x + ux * a + px * o, y: center.y + uy * a + py * o });
+  }
+
   const aimToPin = metersToYards(
     Math.hypot(aimXY.x - ctx.pin.x, aimXY.y - ctx.pin.y)
   );
@@ -340,6 +370,7 @@ function evaluateAim(
     score: expected,
     offLineDeg,
     leavesClub,
+    landingZone: zone.map((p) => toLatLng(p, ctx.proj)),
   };
 }
 

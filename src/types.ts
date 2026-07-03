@@ -114,6 +114,8 @@ export interface Recommendation {
   offLineDeg: number;
   /** Club whose full carry matches the distance left to the pin, if any. */
   leavesClub?: string;
+  /** 1-sigma landing-dispersion ellipse around the expected landing point. */
+  landingZone?: LatLng[];
 }
 
 export interface StrategyResult {

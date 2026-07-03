@@ -197,6 +197,19 @@ export default function HoleMap({
         dashArray: "4 6",
       }).addTo(lg);
 
+      // Your 1-sigma shot pattern around the expected landing point — shows
+      // where the ball actually finishes when you aim here.
+      if (chosen.landingZone && chosen.landingZone.length >= 3) {
+        L.polygon(chosen.landingZone.map(ll), {
+          color: "#ffffff",
+          weight: 1.5,
+          dashArray: "3 4",
+          fillColor: "#ffffff",
+          fillOpacity: 0.08,
+          interactive: false,
+        }).addTo(lg);
+      }
+
       addTarget(lg, chosen.aim, "target", `${chosen.club.name} · ${Math.round(chosen.carryYards)}y`);
 
       // Show the alternative (aggressive vs safe) that isn't the chosen one.
