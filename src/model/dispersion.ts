@@ -20,14 +20,34 @@ interface TierParams {
   depthPct: number;
   /** Systematic mean shortfall (fraction). Amateurs tend to come up short. */
   shortBias: number;
+  /**
+   * Baseline probability of a poor strike (top / chunk / big miss) on a
+   * mid-length swing. Grows with attempted distance — long clubs off the
+   * deck are the riskiest swings in an amateur's bag.
+   */
+  mishitBase: number;
 }
 
 const TIERS: Record<SkillTier, TierParams> = {
-  pro: { offlineDeg: 3.2, depthPct: 0.045, shortBias: 0.0 },
-  low: { offlineDeg: 4.5, depthPct: 0.06, shortBias: 0.015 },
-  mid: { offlineDeg: 6.0, depthPct: 0.075, shortBias: 0.03 },
-  high: { offlineDeg: 8.0, depthPct: 0.095, shortBias: 0.05 },
+  pro: { offlineDeg: 3.2, depthPct: 0.045, shortBias: 0.0, mishitBase: 0.03 },
+  low: { offlineDeg: 4.5, depthPct: 0.06, shortBias: 0.015, mishitBase: 0.07 },
+  mid: { offlineDeg: 6.0, depthPct: 0.075, shortBias: 0.03, mishitBase: 0.12 },
+  high: { offlineDeg: 8.0, depthPct: 0.095, shortBias: 0.05, mishitBase: 0.18 },
 };
+
+/**
+ * Probability of a poor strike for this attempted distance. A Gaussian alone
+ * flatters long clubs; real amateur long-club distributions have a fat tail
+ * of tops, chunks, and big curves that wedge swings don't.
+ */
+export function mishitProb(
+  skill: SkillTier,
+  attemptedYards: number,
+  scale = 1
+): number {
+  const base = TIERS[skill].mishitBase * scale;
+  return Math.min(base * 2.2, base * Math.pow(attemptedYards / 170, 1.6));
+}
 
 export interface ShotDispersion {
   /** Std dev perpendicular to target line, in yards. */

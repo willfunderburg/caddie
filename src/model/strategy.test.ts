@@ -192,6 +192,39 @@ describe("computeStrategy", () => {
     }
   });
 
+  it("lays up on a reachable par 5 when the green is guarded (mid skill)", () => {
+    // 225y to a small green ringed by bunkers with trees flanking — the
+    // situation from Boscobel: reachable in two, but a mid-handicapper's
+    // long-club mishit tail plus a weak amateur short game around a guarded
+    // green make a full-wedge layup the smarter play.
+    const hole: Hole = {
+      id: "h",
+      number: 1,
+      par: 5,
+      pin: at(0, 225),
+      features: [
+        {
+          id: "f",
+          kind: "fairway",
+          polygon: [at(-22, 30), at(22, 30), at(22, 180), at(-22, 180)],
+        },
+        { id: "g", kind: "green", polygon: blob(0, 225, 11) },
+        { id: "b1", kind: "bunker", polygon: blob(-14, 212, 7) },
+        { id: "b2", kind: "bunker", polygon: blob(14, 212, 7) },
+        { id: "b3", kind: "bunker", polygon: blob(0, 240, 7) },
+        { id: "t1", kind: "trees", polygon: blob(-38, 218, 17) },
+        { id: "t2", kind: "trees", polygon: blob(38, 218, 17) },
+      ],
+    };
+    const res = computeStrategy(ball, hole, profile, { riskAppetite: 0.5 });
+    expect(res).not.toBeNull();
+    // The recommended play is a layup, not a full send at the green.
+    expect(res!.chosen.carryYards).toBeLessThanOrEqual(175);
+    expect(res!.chosen.toPinYards).toBeGreaterThanOrEqual(50);
+    // The safe play certainly lays up.
+    expect(res!.safe.carryYards).toBeLessThanOrEqual(175);
+  });
+
   it("is deterministic for the same inputs", () => {
     const hole: Hole = {
       id: "h",

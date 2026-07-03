@@ -21,8 +21,9 @@ import {
   type Projection,
   type XY,
 } from "./geo";
-import { dispersionFor, gaussian } from "./dispersion";
+import { dispersionFor, gaussian, mishitProb } from "./dispersion";
 import { expectedStrokes } from "./strokes";
+import type { SkillTier } from "../types";
 
 type Lie = "green" | "fairway" | "bunker" | "water" | "oob" | "trees" | "rough";
 
@@ -101,6 +102,19 @@ const BLOCKED_PENALTY = 0.42; // strokes: must punch out instead of attacking
 const GUARD_WATER_PENALTY = 0.22;
 const GUARD_BUNKER_PENALTY = 0.1;
 const FULL_CLUB_BONUS = 0.02;
+
+// The strokes tables are pro/composite baselines and flatter the amateur
+// short game. Broadie's 90-golfer data: greenside rough at ~20y costs a pro
+// ~2.5 strokes but a mid-handicapper ~2.9, and greenside sand is worse still
+// (amateur sand-save rates run ~10%). This gap is precisely what makes
+// laying up to a full wedge correct for amateurs when a green is guarded.
+const SHORT_GAME_PENALTY: Record<SkillTier, number> = {
+  pro: 0,
+  low: 0.12,
+  mid: 0.28,
+  high: 0.45,
+};
+const SHORT_GAME_RANGE_YDS = 60;
 
 // Never tell the player to aim AT trouble. The Monte-Carlo often finds that
 // centering the pattern on a small hazard is statistically near-optimal, but
@@ -207,6 +221,13 @@ function landingCost(land: XY, lie: Lie, toPinYards: number, ctx: Ctx): number {
   if (guardWater) cost += GUARD_WATER_PENALTY;
   else if (guardBunker) cost += GUARD_BUNKER_PENALTY;
 
+  // Amateur short-game correction: scrappy lies near the green are far more
+  // expensive for amateurs than the pro-based tables say.
+  if (toPinYards < SHORT_GAME_RANGE_YDS && lie !== "fairway") {
+    const p = SHORT_GAME_PENALTY[ctx.profile.skill];
+    cost += lie === "bunker" ? p * 1.5 : p;
+  }
+
   return cost + comfort(toPinYards, ctx);
 }
 
@@ -272,10 +293,23 @@ function evaluateAim(
   const meanDistM = yardsToMeters(disp.meanDistanceYards);
   const depthM = yardsToMeters(disp.depthYards);
   const offM = yardsToMeters(disp.offlineYards);
+  const pMishit = mishitProb(
+    ctx.profile.skill,
+    attemptedYards,
+    ctx.profile.dispersionScale
+  );
 
   for (let i = 0; i < samples; i++) {
-    const along = meanDistM + gaussian(ctx.rng) * depthM;
-    const off = gaussian(ctx.rng) * offM;
+    let along: number;
+    let off: number;
+    if (ctx.rng() < pMishit) {
+      // Poor strike: well short (top/chunk) and/or a big curve offline.
+      along = meanDistM * (0.35 + ctx.rng() * 0.4);
+      off = gaussian(ctx.rng) * offM * 2;
+    } else {
+      along = meanDistM + gaussian(ctx.rng) * depthM;
+      off = gaussian(ctx.rng) * offM;
+    }
     const land: XY = {
       x: ctx.ball.x + ux * along + px * off,
       y: ctx.ball.y + uy * along + py * off,

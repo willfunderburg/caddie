@@ -67,6 +67,12 @@ export default function StrategyPanel({
         </span>
       </div>
       <div className="tagline">
+        {c.toPinYards >= 50 &&
+          ballToPinYards != null &&
+          ballToPinYards <=
+            Math.max(...profile.bag.map((b) => b.carryYards)) + 15 && (
+            <b style={{ color: "var(--safe)" }}>Lay-up play · </b>
+          )}
         Leaves ~{c.toPinYards < 1 ? "tap-in" : Math.round(c.toPinYards) + "y"}
         {c.leavesClub ? ` (full ${c.leavesClub})` : ""} to the hole · expected{" "}
         {c.expectedStrokes.toFixed(2)} strokes to hole out
