@@ -1,0 +1,10 @@
+{
+  "name": "Caddie · Golf Strategy",
+  "short_name": "Caddie",
+  "description": "GPS golf-course strategy caddie optimized for your clubs and skill level.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0b3d2e",
+  "theme_color": "#0b3d2e",
+  "icons": []
+}
