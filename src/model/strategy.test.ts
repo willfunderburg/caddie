@@ -23,6 +23,7 @@ const blob = (e: number, n: number, r: number): LatLng[] => {
 const profile: PlayerProfile = {
   skill: "mid",
   dispersionScale: 1,
+  reminders: { all: [], long: [] },
   bag: [
     { id: "d", name: "Driver", carryYards: 230 },
     { id: "7i", name: "7 Iron", carryYards: 150 },

@@ -66,6 +66,45 @@ export default function BagEditor({ profile, onChange }: Props) {
         </p>
       </div>
 
+      <div className="card">
+        <b>Swing keys</b>
+        <p className="hint" style={{ marginTop: 4 }}>
+          Shown with every recommendation. One per line.
+        </p>
+        <label style={{ fontSize: 12, color: "var(--muted)" }}>
+          Every swing
+        </label>
+        <textarea
+          rows={3}
+          value={profile.reminders.all.join("\n")}
+          onChange={(e) =>
+            onChange({
+              ...profile,
+              reminders: {
+                ...profile.reminders,
+                all: e.target.value.split("\n"),
+              },
+            })
+          }
+        />
+        <label style={{ fontSize: 12, color: "var(--muted)" }}>
+          Long clubs only (5-iron and longer)
+        </label>
+        <textarea
+          rows={2}
+          value={profile.reminders.long.join("\n")}
+          onChange={(e) =>
+            onChange({
+              ...profile,
+              reminders: {
+                ...profile.reminders,
+                long: e.target.value.split("\n"),
+              },
+            })
+          }
+        />
+      </div>
+
       <div className="row between">
         <h2 style={{ margin: 0 }}>Clubs ({profile.bag.length})</h2>
         <button

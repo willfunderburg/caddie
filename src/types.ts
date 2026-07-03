@@ -34,6 +34,13 @@ export interface PlayerProfile {
    * Lets a user who knows they're straight-but-short tune the model.
    */
   dispersionScale: number;
+  /** Personal swing keys shown with every recommendation. */
+  reminders: {
+    /** Shown on every swing. */
+    all: string[];
+    /** Shown only for long clubs (5-iron and longer). */
+    long: string[];
+  };
 }
 
 /** Types of terrain / features on a hole. */

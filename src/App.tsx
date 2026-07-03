@@ -20,6 +20,7 @@ export default function App() {
   const [courses, setCourses] = useState<Course[]>(() => loadCourses());
   const [tab, setTab] = useState<Tab>("play");
   const [riskAppetite, setRiskAppetite] = useState(0.6);
+  const [mapFull, setMapFull] = useState(false);
 
   const [courseId, setCourseId] = useState(courses[0]?.id ?? "");
   const [holeId, setHoleId] = useState(courses[0]?.holes[0]?.id ?? "");
@@ -72,22 +73,27 @@ export default function App() {
   const ballToPin =
     ball && hole?.pin ? distanceYards(ball.point, hole.pin) : null;
 
+  const hideChrome = mapFull && tab === "play";
+
   return (
     <div className="app">
-      <div className="topbar">
-        <div className="logo">
-          Cad<span>die</span>
+      {!hideChrome && (
+        <div className="topbar">
+          <div className="logo">
+            Cad<span>die</span>
+          </div>
+          <div className="sub">
+            {course ? course.name : "No course"}
+            {hole
+              ? ` · Hole ${hole.number} · par ${hole.par}${
+                  hole.yards ? ` · ${hole.yards}y` : ""
+                }`
+              : ""}
+          </div>
         </div>
-        <div className="sub">
-          {course ? course.name : "No course"}
-          {hole
-            ? ` · Hole ${hole.number} · par ${hole.par}${
-                hole.yards ? ` · ${hole.yards}y` : ""
-              }`
-            : ""}
-        </div>
-      </div>
+      )}
 
+      {!hideChrome && (
       <div className="tabs">
         <button
           className={tab === "play" ? "active" : ""}
@@ -108,10 +114,11 @@ export default function App() {
           🗺️ Course
         </button>
       </div>
+      )}
 
       {tab === "play" && (
         <div className="content play">
-          {course && course.holes.length > 1 && (
+          {!hideChrome && course && course.holes.length > 1 && (
             <div className="hole-picker">
               {course.holes.map((h) => (
                 <button
@@ -133,15 +140,27 @@ export default function App() {
                 result={result}
                 onBallChange={setBall}
                 onHoleChange={updateHole}
+                fullscreen={hideChrome}
+                onToggleFullscreen={() => setMapFull((f) => !f)}
               />
-              <StrategyPanel
-                result={result}
-                ball={ball}
-                hole={hole}
-                ballToPinYards={ballToPin}
-                riskAppetite={riskAppetite}
-                onRiskChange={setRiskAppetite}
-              />
+              {hideChrome && result && (
+                <div className="fs-pill">
+                  <b>{result.chosen.club.name}</b> · aim{" "}
+                  {Math.round(result.chosen.carryYards)}y
+                  {ballToPin != null && <> · {Math.round(ballToPin)}y to pin</>}
+                </div>
+              )}
+              {!hideChrome && (
+                <StrategyPanel
+                  result={result}
+                  ball={ball}
+                  hole={hole}
+                  ballToPinYards={ballToPin}
+                  riskAppetite={riskAppetite}
+                  onRiskChange={setRiskAppetite}
+                  profile={profile}
+                />
+              )}
             </>
           ) : (
             <div className="empty">

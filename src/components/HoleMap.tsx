@@ -15,6 +15,9 @@ interface Props {
   result: StrategyResult | null;
   onBallChange: (b: BallPosition) => void;
   onHoleChange: (h: Hole) => void;
+  /** Hide the editing toolbar and let the map fill the screen. */
+  fullscreen: boolean;
+  onToggleFullscreen: () => void;
 }
 
 type Tool = "ball" | "pin" | FeatureKind | null;
@@ -49,6 +52,8 @@ export default function HoleMap({
   result,
   onBallChange,
   onHoleChange,
+  fullscreen,
+  onToggleFullscreen,
 }: Props) {
   const mapEl = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -127,6 +132,12 @@ export default function HoleMap({
   useEffect(() => {
     didFit.current = false;
   }, [hole.id]);
+
+  // Leaflet needs a size recalc when the container grows/shrinks.
+  useEffect(() => {
+    const t = setTimeout(() => mapRef.current?.invalidateSize(), 60);
+    return () => clearTimeout(t);
+  }, [fullscreen]);
 
   // --- Draw features ---
   useEffect(() => {
@@ -278,23 +289,25 @@ export default function HoleMap({
 
   return (
     <>
-      <div className="map-toolbar">
-        <button className="chip" onClick={locate}>
-          🛰️ GPS
-        </button>
-        {TOOLS.map((t) => (
-          <button
-            key={t.label}
-            className={"chip" + (tool === t.tool ? " active" : "")}
-            onClick={() => {
-              setDraft([]);
-              setTool(tool === t.tool ? null : t.tool);
-            }}
-          >
-            {t.label}
+      {!fullscreen && (
+        <div className="map-toolbar">
+          <button className="chip" onClick={locate}>
+            🛰️ GPS
           </button>
-        ))}
-      </div>
+          {TOOLS.map((t) => (
+            <button
+              key={t.label}
+              className={"chip" + (tool === t.tool ? " active" : "")}
+              onClick={() => {
+                setDraft([]);
+                setTool(tool === t.tool ? null : t.tool);
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {drawingFeature && (
         <div className="map-toolbar" style={{ paddingTop: 0 }}>
@@ -325,7 +338,23 @@ export default function HoleMap({
         </div>
       )}
 
-      <div className="map" ref={mapEl} />
+      <div className="map-wrap">
+        <div className="map" ref={mapEl} />
+        <div className="map-float">
+          <button
+            className="float-btn"
+            title={fullscreen ? "Exit full map" : "Full map"}
+            onClick={onToggleFullscreen}
+          >
+            {fullscreen ? "✕" : "⛶"}
+          </button>
+          {fullscreen && (
+            <button className="float-btn" title="GPS" onClick={locate}>
+              🛰️
+            </button>
+          )}
+        </div>
+      </div>
     </>
   );
 }

@@ -1,4 +1,5 @@
-import type { BallPosition, Hole, StrategyResult } from "../types";
+import type { BallPosition, Hole, PlayerProfile, StrategyResult } from "../types";
+import { remindersFor } from "../model/reminders";
 
 interface Props {
   result: StrategyResult | null;
@@ -7,6 +8,7 @@ interface Props {
   ballToPinYards: number | null;
   riskAppetite: number;
   onRiskChange: (v: number) => void;
+  profile: PlayerProfile;
 }
 
 function pct(x: number): string {
@@ -26,6 +28,7 @@ export default function StrategyPanel({
   ballToPinYards,
   riskAppetite,
   onRiskChange,
+  profile,
 }: Props) {
   if (!hole.pin) {
     return (
@@ -75,6 +78,14 @@ export default function StrategyPanel({
             better next shot
           </>
         )}
+      </div>
+
+      <div className="keys">
+        {remindersFor(c.club, profile.reminders).map((r, i) => (
+          <span className="key" key={i}>
+            🔑 {r}
+          </span>
+        ))}
       </div>
 
       <div className="stat-row">

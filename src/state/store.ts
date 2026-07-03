@@ -1,5 +1,6 @@
 import type { Course, PlayerProfile } from "../types";
 import { defaultBag } from "../data/defaultBag";
+import { defaultReminders } from "../model/reminders";
 import { sampleCourse } from "../data/sampleCourse";
 import { boscobelCourse } from "../data/boscobel";
 
@@ -29,11 +30,16 @@ function save<T>(key: string, value: T): void {
 }
 
 export function loadProfile(): PlayerProfile {
-  return load<PlayerProfile>(PROFILE_KEY, {
+  const fallback: PlayerProfile = {
     bag: defaultBag(),
     skill: "mid",
     dispersionScale: 1,
-  });
+    reminders: defaultReminders(),
+  };
+  const p = load<PlayerProfile>(PROFILE_KEY, fallback);
+  // Profiles saved by older versions may lack newer fields.
+  if (!p.reminders) p.reminders = defaultReminders();
+  return p;
 }
 
 export function saveProfile(p: PlayerProfile): void {
