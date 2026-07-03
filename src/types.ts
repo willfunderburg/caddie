@@ -100,6 +100,13 @@ export interface Recommendation {
   inPlayChance: number;
   /** Risk-adjusted score used to rank (lower is better). */
   score: number;
+  /**
+   * Signed degrees the aim deviates from the straight ball→pin line.
+   * Positive = right of the line (viewed from the ball). ~0 = straight at it.
+   */
+  offLineDeg: number;
+  /** Club whose full carry matches the distance left to the pin, if any. */
+  leavesClub?: string;
 }
 
 export interface StrategyResult {

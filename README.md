@@ -46,10 +46,22 @@ Everything is stored locally in your browser — no backend, no sign-up.
   strokes-gained tables (Broadie-style) giving expected strokes to hole out by
   lie and distance, including putting by feet.
 - **Search** (`src/model/strategy.ts`): sweeps candidate aim points across every
-  club distance and a range of lateral aim lines, Monte-Carlo simulates each,
-  accounts for water (penalty + drop) and OOB (stroke-and-distance), and returns
-  the **aggressive** (min expected strokes), **safe** (min risk-adjusted), and
+  club distance and a ±45° fan of lines, **plus targets anchored inside the
+  traced fairway/green shapes** (so dogleg landing zones far off the direct
+  line are always considered). Monte-Carlo simulates each, accounts for water
+  (penalty + drop) and OOB (stroke-and-distance), and returns the
+  **aggressive** (min expected strokes), **safe** (min risk-adjusted), and
   **chosen** (your risk-slider) plays.
+- **Position golf, from geometry** (per Broadie / DECADE / Stagner research —
+  distance dominates, angles only matter when hazards make them matter):
+  - Trees crossing the shot line while the ball is still climbing make that
+    line unplayable; trees crossing the *next* shot's line turn a perfect lie
+    into a punch-out — so the engine routes around doglegs.
+  - A hazard crossing the final ~35y into the pin marks a guarded/short-sided
+    approach — landing zones with an open angle score better, so "the good
+    side of the fairway" emerges from the traced geometry.
+  - Small bonus for leaving a full-club number (and a penalty for awkward
+    part-swing distances), reported in the UI ("leaves a full PW").
 
 ## Run it
 

@@ -106,6 +106,53 @@ export function bboxContains(b: BBox, pt: XY): boolean {
   return pt.x >= b.minX && pt.x <= b.maxX && pt.y >= b.minY && pt.y <= b.maxY;
 }
 
+function cross(o: XY, a: XY, b: XY): number {
+  return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+}
+
+/** Do segments AB and CD properly intersect? (Collinear touches ignored.) */
+export function segmentsIntersect(a: XY, b: XY, c: XY, d: XY): boolean {
+  const d1 = cross(c, d, a);
+  const d2 = cross(c, d, b);
+  const d3 = cross(a, b, c);
+  const d4 = cross(a, b, d);
+  return (
+    ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) &&
+    ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))
+  );
+}
+
+/**
+ * Does segment AB cross the polygon boundary, or lie (partly) inside it?
+ * Pass the polygon's bbox to allow a cheap early-out.
+ */
+export function segmentIntersectsPolygon(
+  a: XY,
+  b: XY,
+  poly: XY[],
+  bbox?: BBox
+): boolean {
+  if (bbox) {
+    const minX = Math.min(a.x, b.x);
+    const maxX = Math.max(a.x, b.x);
+    const minY = Math.min(a.y, b.y);
+    const maxY = Math.max(a.y, b.y);
+    if (
+      maxX < bbox.minX ||
+      minX > bbox.maxX ||
+      maxY < bbox.minY ||
+      minY > bbox.maxY
+    ) {
+      return false;
+    }
+  }
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    if (segmentsIntersect(a, b, poly[j], poly[i])) return true;
+  }
+  // No boundary crossing: either fully inside or fully outside.
+  return pointInPolygonXY(a, poly) || pointInPolygonXY(b, poly);
+}
+
 /** Centroid of a polygon (simple average of vertices). */
 export function centroidXY(poly: XY[]): XY {
   let x = 0,

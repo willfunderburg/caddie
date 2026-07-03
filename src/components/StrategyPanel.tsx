@@ -64,8 +64,17 @@ export default function StrategyPanel({
         </span>
       </div>
       <div className="tagline">
-        Leaves ~{c.toPinYards < 1 ? "tap-in" : Math.round(c.toPinYards) + "y"} to
-        the hole · expected {c.expectedStrokes.toFixed(2)} strokes to hole out
+        Leaves ~{c.toPinYards < 1 ? "tap-in" : Math.round(c.toPinYards) + "y"}
+        {c.leavesClub ? ` (full ${c.leavesClub})` : ""} to the hole · expected{" "}
+        {c.expectedStrokes.toFixed(2)} strokes to hole out
+        {Math.abs(c.offLineDeg) >= 10 && (
+          <>
+            {" "}
+            · aiming {Math.round(Math.abs(c.offLineDeg))}°{" "}
+            {c.offLineDeg > 0 ? "right" : "left"} of the direct line for a
+            better next shot
+          </>
+        )}
       </div>
 
       <div className="stat-row">
